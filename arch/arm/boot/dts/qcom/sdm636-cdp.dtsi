@@ -11,6 +11,7 @@
  */
 
 #include "sdm660-cdp.dtsi"
+<<<<<<< HEAD
 #include "sdm636-camera-sensor-mtp.dtsi"
 / {
 };
@@ -26,3 +27,8 @@
 &mdss_dsi1 {
 	status = "disabled";
 };
+=======
+/ {
+};
+
+>>>>>>> 261e3cc54329... Fully import HTC source 2.33.401.10

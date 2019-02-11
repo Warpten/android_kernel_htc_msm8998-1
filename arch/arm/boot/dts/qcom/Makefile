@@ -169,9 +169,6 @@ dtb-$(CONFIG_ARCH_MSM8998) += msm8998-sim.dtb \
 	apq8098-v2.1-qrd.dtb \
 	apq8098-v2.1-mediabox.dtb \
 	apq8098-v2.1-svr20.dtb \
-	msm8998-v2.1-interposer-sdm660-cdp.dtb \
-	msm8998-v2.1-interposer-sdm660-mtp.dtb \
-	msm8998-v2.1-interposer-sdm660-qrd.dtb \
 	msm8998-9x55-rcm.dtb \
 	msm8998-9x55-cdp.dtb \
 	msm8998-9x55-mtp.dtb
@@ -288,6 +285,21 @@ dtb-$(CONFIG_ARCH_SDM630) += sdm630-rumi.dtb \
 	sdm630-headset-jacktype-no-rcm.dtb \
 	sdm630-pm660a-headset-jacktype-no-cdp.dtb \
 	sdm630-pm660a-headset-jacktype-no-rcm.dtb
+
+# HTC msm8998 device dtbs
+dtb-$(CONFIG_ARCH_MSM8998) += \
+	msm8998-v2.1-htc_ocn-xa.dtb \
+	msm8998-v2.1-htc_ocn-xb.dtb \
+	msm8998-v2.1-htc_ocn-xc.dtb \
+	msm8998-v2.1-htc_ocn-xd.dtb \
+	msm8998-v2.1-htc_ocn-xe.dtb \
+	msm8998-v2.1-htc_ocn-xf.dtb \
+	msm8998-v2.1-htc_ocn-a.dtb \
+	msm8998-v2.1-htc_ocnuhljapan-xb.dtb \
+	msm8998-v2.1-htc_ocnuhljapan-xc.dtb \
+	msm8998-v2.1-htc_ocnuhljapan-xd.dtb \
+	msm8998-v2.1-htc_ocnuhljapan-xe.dtb \
+	msm8998-v2.1-htc_ocnuhljapan-a.dtb
 
 ifeq ($(CONFIG_ARM64),y)
 always          := $(dtb-y)

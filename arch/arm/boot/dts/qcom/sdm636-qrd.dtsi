@@ -10,7 +10,11 @@
  * GNU General Public License for more details.
  */
 
+<<<<<<< HEAD
 #include "sdm630-qrd.dtsi"
+=======
+#include "sdm660-qrd.dtsi"
+>>>>>>> 261e3cc54329... Fully import HTC source 2.33.401.10
 / {
 };
 

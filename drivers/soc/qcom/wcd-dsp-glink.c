@@ -24,6 +24,10 @@
 #include <linux/vmalloc.h>
 #include <soc/qcom/glink.h>
 #include "sound/wcd-dsp-glink.h"
+/* HTC_AUD_START */
+#include <linux/vmalloc.h>
+#include <linux/mm.h>
+/* HTC_AUD_END */
 
 #define WDSP_GLINK_DRIVER_NAME "wcd-dsp-glink"
 #define WDSP_MAX_WRITE_SIZE (256 * 1024)
@@ -125,6 +129,10 @@ struct wdsp_glink_priv {
 	struct device *dev;
 };
 
+/* HTC_AUD_START */
+static struct workqueue_struct *work_queue_tx;
+/* HTC AUD_END */
+
 static int wdsp_glink_close_ch(struct wdsp_glink_ch *ch);
 static int wdsp_glink_open_ch(struct wdsp_glink_ch *ch);
 
@@ -165,7 +173,13 @@ static void wdsp_glink_free_tx_buf(const void *priv, const void *pkt_priv)
 	wpriv = ch->wpriv;
 	/* Work queue to free tx pkt */
 	INIT_WORK(&tx_buf->free_tx_work, wdsp_glink_free_tx_buf_work);
+/* HTC_AUD_START */
+#if 0
 	queue_work(wpriv->work_queue, &tx_buf->free_tx_work);
+#else
+	queue_work(work_queue_tx, &tx_buf->free_tx_work);
+#endif
+/* HTC_AUD_END */
 }
 
 /*
@@ -368,15 +382,28 @@ static void wdsp_glink_notify_state(void *handle, const void *priv,
 		 * Don't use dev_dbg here as dev may not be valid if channel
 		 * closed from driver close.
 		 */
-		pr_info("%s: channel: %s disconnected locally\n",
+/* HTC_AUD_START */
+#if 0
+		pr_debug("%s: channel: %s disconnected locally\n",
 			 __func__, ch->ch_cfg.name);
-		mutex_unlock(&ch->mutex);
+#else
+		pr_err("%s: channel: %s disconnected locally\n",
+			 __func__, ch->ch_cfg.name);
+#endif
+/* HTC_AUD_END */
 		ch->free_mem = true;
 		wake_up(&ch->ch_free_wait);
 		return;
 	} else if (event == GLINK_REMOTE_DISCONNECTED) {
-		pr_info("%s: remote channel: %s disconnected remotely\n",
+/* HTC_AUD_START */
+#if 0
+		dev_dbg(wpriv->dev, "%s: remote channel: %s disconnected remotely\n",
 			 __func__, ch->ch_cfg.name);
+#else
+		pr_err("%s: remote channel: %s disconnected remotely\n",
+			 __func__, ch->ch_cfg.name);
+#endif
+/* HTC_AUD_END */
 		/*
 		 * If remote disconnect happens, local side also has
 		 * to close the channel as per glink design in a
@@ -1068,6 +1095,9 @@ static int wdsp_glink_release(struct inode *inode, struct file *file)
 	if (wpriv->glink_state.handle)
 		glink_unregister_link_state_cb(wpriv->glink_state.handle);
 
+/* HTC_AUD_START */
+	pr_err("%s: ++\n", __func__);
+/* HTC_AUD_END */
 	flush_workqueue(wpriv->work_queue);
 	/*
 	 * Wait for channel local and remote disconnect state notifications
@@ -1107,6 +1137,9 @@ static int wdsp_glink_release(struct inode *inode, struct file *file)
 	kfree(wpriv->ch);
 	wpriv->ch = NULL;
 
+/* HTC_AUD_START */
+	pr_err("%s: --\n", __func__);
+/* HTC_AUD_END */
 	mutex_destroy(&wpriv->glink_mutex);
 	mutex_destroy(&wpriv->rsp_mutex);
 	kfree(wpriv);
@@ -1173,7 +1206,23 @@ static int wdsp_glink_probe(struct platform_device *pdev)
 		goto err_cdev_add;
 	}
 	platform_set_drvdata(pdev, wdev);
+
+/* HTC_AUD_START */
+	work_queue_tx = create_singlethread_workqueue("wdsp_glink_wq_tx");
+	if (!work_queue_tx) {
+		dev_err(&pdev->dev, "%s: Error creating wdsp_glink_wq_tx\n",
+			__func__);
+		ret = -EINVAL;
+		goto err_wq_tx;
+	}
+/* HTC_AUD_END */
+
 	goto done;
+
+/* HTC_AUD_START */
+err_wq_tx:
+	cdev_del(&wdev->cdev);
+/* HTC_AUD_END */
 
 err_cdev_add:
 	device_destroy(wdev->cls, wdev->dev_num);
@@ -1208,6 +1257,11 @@ static int wdsp_glink_remove(struct platform_device *pdev)
 	} else {
 		dev_err(&pdev->dev, "%s: Invalid device data\n", __func__);
 	}
+
+/* HTC_AUD_START */
+	flush_workqueue(work_queue_tx);
+	destroy_workqueue(work_queue_tx);
+/* HTC_AUD_END */
 
 	return 0;
 }

@@ -189,9 +189,6 @@ obj-$(CONFIG_HTC_DEBUG)   += htc_debug/
 # htc_ril driver
 obj-y += htc_ril/
 
-#HTC Debug
-obj-$(CONFIG_HTC_DEBUG_FOOTPRINT)      += htc_mnemosyne/
-
 #HTC LogLevel
 obj-$(CONFIG_HTC_LOGLEVEL)      += htc_loglevel/
 

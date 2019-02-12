@@ -4209,11 +4209,6 @@ static int voice_send_cvp_topology_commit_cmd(struct voice_data *v)
 			v->async_err));
 		ret = adsp_err_get_lnx_err_code(
 				v->async_err);
-/* HTC_AUD_START */
-#ifdef CONFIG_HTC_DEBUG_DSP
-		BUG();
-#endif
-/* HTC_AUD_END */
 		goto done;
 	}
 

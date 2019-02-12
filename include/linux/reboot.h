@@ -72,7 +72,6 @@ extern char poweroff_cmd[POWEROFF_CMD_PATH_LEN];
 
 extern void orderly_poweroff(bool force);
 extern void orderly_reboot(void);
-extern void orderly_cmd_reboot(char* cmd);
 
 /*
  * Emergency restart, callable from an interrupt handler.

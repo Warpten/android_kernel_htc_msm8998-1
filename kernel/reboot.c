@@ -409,7 +409,7 @@ static int run_cmd(const char *cmd)
 	return ret;
 }
 
-static int __orderly_reboot(char* cmd)
+static int __orderly_reboot(void)
 {
 	int ret;
 
@@ -418,7 +418,7 @@ static int __orderly_reboot(char* cmd)
 	if (ret) {
 		pr_warn("Failed to start orderly reboot: forcing the issue\n");
 		emergency_sync();
-		kernel_restart(cmd);
+		kernel_restart(NULL);
 	}
 
 	return ret;
@@ -471,7 +471,7 @@ EXPORT_SYMBOL_GPL(orderly_poweroff);
 
 static void reboot_work_func(struct work_struct *work)
 {
-	__orderly_reboot(NULL);
+	__orderly_reboot();
 }
 
 static DECLARE_WORK(reboot_work, reboot_work_func);
@@ -487,12 +487,6 @@ void orderly_reboot(void)
 	schedule_work(&reboot_work);
 }
 EXPORT_SYMBOL_GPL(orderly_reboot);
-
-void orderly_cmd_reboot(char* cmd)
-{
-	__orderly_reboot(cmd);
-}
-EXPORT_SYMBOL_GPL(orderly_cmd_reboot);
 
 static int __init reboot_setup(char *str)
 {

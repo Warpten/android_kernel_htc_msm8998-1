@@ -42,14 +42,6 @@
 
 #include "peripheral-loader.h"
 
-/* Modem_BSP++ */
-/* Debug modem SSR hang */
-#if defined(CONFIG_HTC_DEBUG_SSR)
-#define SSR_CHECK_TIMEOUT 30000 /* 30 seconds */
-static void subsystem_restart_check_func(struct work_struct *work);
-#endif
-/* Modem_BSP-- */
-
 #define DISABLE_SSR 0x9889deed
 /* If set to 0x9889deed, call to subsystem_restart_dev() returns immediately */
 static uint disable_restart_work;
@@ -101,81 +93,6 @@ static const char * const restart_levels[] = {
 	[RESET_SOC] = "SYSTEM",
 	[RESET_SUBSYS_COUPLED] = "RELATED",
 };
-
-#if defined(CONFIG_HTC_DEBUG_SSR)
-/**
- * MSS restart reason feature (Non-block)
- */
-
-#define SUBSYS_NAME_MAX_LENGTH 40
-#define RD_BUF_SIZE			  256
-#define MODEM_ERRMSG_LIST_LEN 10
-
-struct msm_msr_info {
-	int valid;
-	struct timespec msr_time;
-	char modem_errmsg[RD_BUF_SIZE];
-};
-int msm_msr_index = 0;
-static struct msm_msr_info msr_info_list[MODEM_ERRMSG_LIST_LEN];
-
-static ssize_t subsystem_restart_reason_nonblock_show(struct kobject *kobj,
-		struct kobj_attribute *attr, char *buf)
-{
-
-	int i = 0;
-	char tmp[RD_BUF_SIZE+30];
-
-	for( i=0; i<MODEM_ERRMSG_LIST_LEN; i++ ) {
-		if( msr_info_list[i].valid != 0 ) {
-			//Copy errmsg to buf
-			snprintf(tmp, RD_BUF_SIZE+30, "%ld-%s|\n\r",
-				msr_info_list[i].msr_time.tv_sec,
-				msr_info_list[i].modem_errmsg);
-			strcat(buf, tmp);
-			memset(tmp, 0, RD_BUF_SIZE+30);
-		}
-		msr_info_list[i].valid = 0;
-		memset(msr_info_list[i].modem_errmsg, 0, RD_BUF_SIZE);
-	}
-	strcat(buf, "\n\r\0");
-
-	return strlen(buf);
-}
-
-void subsystem_restart_reason_nonblock_init(void)
-{
-	int i = 0;
-	msm_msr_index = 0;
-	for( i=0; i<MODEM_ERRMSG_LIST_LEN; i++ ) {
-		msr_info_list[i].valid = 0;
-		memset(msr_info_list[i].modem_errmsg, 0, RD_BUF_SIZE);
-	}
-}
-
-#define subsystem_restart_ro_attr(_name) \
-	static struct kobj_attribute _name##_attr = {  \
-		.attr   = {                             \
-			.name = __stringify(_name),     \
-			.mode = 0444,                   \
-		},                                      \
-		.show   = _name##_show,                 \
-		.store  = NULL,         \
-	}
-
-
-subsystem_restart_ro_attr(subsystem_restart_reason_nonblock);
-
-
-static struct attribute *g[] = {
-	&subsystem_restart_reason_nonblock_attr.attr,
-	NULL,
-};
-
-static struct attribute_group attr_group = {
-	.attrs = g,
-};
-#endif
 
 /**
  * struct subsys_tracking - track state of a subsystem or restart order
@@ -261,10 +178,6 @@ struct subsys_device {
 	int restart_level;
 #if defined(CONFIG_HTC_FEATURES_SSR)
 	bool enable_ramdump;
-#endif
-#if defined(CONFIG_HTC_DEBUG_SSR)
-#define HTC_DEBUG_SSR_REASON_LEN 80
-	char restart_reason[HTC_DEBUG_SSR_REASON_LEN];
 #endif
 	int crash_count;
 	struct subsys_soc_restart_order *restart_order;
@@ -367,17 +280,6 @@ static ssize_t firmware_name_store(struct device *dev,
 	mutex_unlock(&track->lock);
 	return orig_count;
 }
-
-#if defined(CONFIG_HTC_DEBUG_SSR)
-void subsys_set_restart_reason(struct subsys_device *dev, const char* reason)
-{
-	if (!dev || !reason)
-		return;
-	snprintf(dev->restart_reason, sizeof(dev->restart_reason) - 1, "%s",
-		reason);
-}
-EXPORT_SYMBOL(subsys_set_restart_reason);
-#endif /* CONFIG_HTC_DEBUG_SSR */
 
 static ssize_t system_debug_show(struct device *dev,
 				struct device_attribute *attr, char *buf)
@@ -1296,17 +1198,6 @@ static void subsystem_restart_wq_func(struct work_struct *work)
 
 	pr_debug("[%s:%d]: Starting restart sequence for %s\n",
 			current->comm, current->pid, desc->name);
-
-/* Modem_BSP++ */
-/* Debug modem SSR hang */
-#if defined(CONFIG_HTC_DEBUG_SSR)
-	if (!strcmp(desc->name, "modem")) {
-		pr_info("[<%p>][%s]: schedule ssr check work.\n", current, __func__);
-		schedule_delayed_work(&dev->ssr_check_wq, msecs_to_jiffies(SSR_CHECK_TIMEOUT));
-	}
-#endif
-/* Modem_BSP-- */
-
 	notify_each_subsys_device(list, count, SUBSYS_BEFORE_SHUTDOWN, NULL);
 	ret = for_each_subsys_device(list, count, NULL, subsystem_shutdown);
 	if (ret)
@@ -1330,16 +1221,6 @@ static void subsystem_restart_wq_func(struct work_struct *work)
 	if (ret)
 		goto err;
 	notify_each_subsys_device(list, count, SUBSYS_AFTER_POWERUP, NULL);
-
-/* Modem_BSP++ */
-/* Debug modem SSR hang */
-#if defined(CONFIG_HTC_DEBUG_SSR)
-	if (!strcmp(desc->name, "modem")) {
-		pr_info("[<%p>][%s]: cancel ssr check work.\n", current, __func__);
-		cancel_delayed_work(&dev->ssr_check_wq);
-	}
-#endif
-/* Modem_BSP-- */
 
 	pr_info("[%s:%d]: Restart sequence for %s completed.\n",
 			current->comm, current->pid, desc->name);
@@ -1365,21 +1246,7 @@ static void __subsystem_restart_dev(struct subsys_device *dev)
 	struct subsys_tracking *track;
 	unsigned long flags;
 
-#if defined(CONFIG_HTC_DEBUG_SSR)
-	/* Modem_BSP for nonblock restart reason */
-	if (!strncmp(name, "modem", SUBSYS_NAME_MAX_LENGTH)) {
-		msr_info_list[msm_msr_index].valid = 1;
-		msr_info_list[msm_msr_index].msr_time = current_kernel_time();
-		snprintf(msr_info_list[msm_msr_index].modem_errmsg, RD_BUF_SIZE,
-			"%s", dev->restart_reason);
-
-		if(++msm_msr_index >= MODEM_ERRMSG_LIST_LEN)
-			msm_msr_index = 0;
-	}
-	/* Modem_BSP for nonblock restart reason */
-#endif
-
-	pr_info("Restarting %s [level=%s]!\n", desc->name,
+	pr_debug("Restarting %s [level=%s]!\n", desc->name,
 			restart_levels[dev->restart_level]);
 
 	track = subsys_get_track(dev);
@@ -1403,68 +1270,19 @@ static void __subsystem_restart_dev(struct subsys_device *dev)
 	spin_unlock_irqrestore(&track->s_lock, flags);
 }
 
-/* Modem_BSP++ */
-/* Debug modem SSR hang */
-#if defined(CONFIG_HTC_DEBUG_SSR)
-static void subsystem_restart_check_func(struct work_struct *work)
-{
-	struct delayed_work* ssr_check_wq = to_delayed_work(work);
-	struct subsys_device* dev = container_of(ssr_check_wq,
-						struct subsys_device, ssr_check_wq);
-	struct subsys_desc *desc = dev->desc;
-
-	if (strcmp(desc->name, "modem")) {
-		pr_info("[<%p>][%s]: Not modem SSR (device[%s]), skip checking\n",
-			current, __func__, desc->name);
-		return;
-	}
-
-	panic("Force to trigger KP due to %s SSR check timeout(%d sec).",
-			desc->name, SSR_CHECK_TIMEOUT/1000);
-}
-#endif
-/* Modem_BSP-- */
-
 static void device_restart_work_hdlr(struct work_struct *work)
 {
 	struct subsys_device *dev = container_of(work, struct subsys_device,
 							device_restart_work);
 
-/* Modem_BSP++ */
-/* Debug modem SSR hang */
-#if defined(CONFIG_HTC_DEBUG_SSR)
-	struct subsys_desc *desc = dev->desc;
-	if (!strcmp(desc->name, "modem")) {
-		pr_info("[<%p>][%s]: schedule ssr check work.\n", current, __func__);
-		schedule_delayed_work(&dev->ssr_check_wq, msecs_to_jiffies(SSR_CHECK_TIMEOUT));
-	}
-#endif
-/* Modem_BSP-- */
-
 	notify_each_subsys_device(&dev, 1, SUBSYS_SOC_RESET, NULL);
-
-/* Modem_BSP++ */
-/* Debug modem SSR hang */
-#if defined(CONFIG_HTC_DEBUG_SSR)
-	if (!strcmp(desc->name, "modem")) {
-		pr_info("[<%p>][%s]: cancel ssr check work.\n", current, __func__);
-		cancel_delayed_work(&dev->ssr_check_wq);
-	}
-#endif
-/* Modem_BSP-- */
-
 	/*
 	 * Temporary workaround until ramdump userspace application calls
 	 * sync() and fclose() on attempting the dump.
 	 */
 	msleep(100);
-
-#if defined(CONFIG_HTC_DEBUG_SSR)
-	panic("SSR: %s crashed. %s", dev->desc->name, dev->restart_reason);
-#else
 	panic("subsys-restart: Resetting the SoC - %s crashed.",
 							dev->desc->name);
-#endif
 }
 
 int subsystem_restart_dev(struct subsys_device *dev)
@@ -2054,20 +1872,10 @@ struct subsys_device *subsys_register(struct subsys_desc *desc)
 
 	subsys->notify = subsys_notif_add_subsys(desc->name);
 
-#if defined(CONFIG_HTC_DEBUG_SSR)
-	memset(subsys->restart_reason, 0, sizeof(subsys->restart_reason));
-#endif
-
 	snprintf(subsys->wlname, sizeof(subsys->wlname), "ssr(%s)", desc->name);
 	wakeup_source_init(&subsys->ssr_wlock, subsys->wlname);
 	INIT_WORK(&subsys->work, subsystem_restart_wq_func);
 	INIT_WORK(&subsys->device_restart_work, device_restart_work_hdlr);
-/* Modem_BSP++ */
-/* Debug modem SSR hang */
-#if defined(CONFIG_HTC_DEBUG_SSR)
-	INIT_DELAYED_WORK(&subsys->ssr_check_wq, subsystem_restart_check_func);
-#endif
-/* Modem_BSP-- */
 	spin_lock_init(&subsys->track.s_lock);
 
 	subsys->id = ida_simple_get(&subsys_ida, 0, 0, GFP_KERNEL);
@@ -2208,22 +2016,6 @@ static struct notifier_block panic_nb = {
 static int __init subsys_restart_init(void)
 {
 	int ret;
-
-#if defined(CONFIG_HTC_DEBUG_SSR)
-	struct kobject *properties_kobj;
-	/* Modem_BSP for nonblock restart reason */
-	subsystem_restart_reason_nonblock_init();
-	properties_kobj = kobject_create_and_add("subsystem_restart_properties",
-						NULL);
-	if (properties_kobj) {
-		ret = sysfs_create_group(properties_kobj, &attr_group);
-		if (ret) {
-			pr_err("subsys_restart_init: sysfs_create_group failed\n");
-			return ret;
-		}
-	}
-	/* Modem_BSP for nonblock restart reason */
-#endif
 
 	ssr_wq = alloc_workqueue("ssr_wq", WQ_CPU_INTENSIVE, 0);
 	BUG_ON(!ssr_wq);

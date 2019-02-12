@@ -116,7 +116,6 @@ extern u8 debugfs_record_enabled;
 extern u8 logging_option;
 extern u8 debug_level_option;
 extern u8 print_limit_option;
-extern bool _BAM_HRESP_dump;
 
 #define SPS_IPC(idx, dev, msg, args...) do { \
 		if (dev) { \
@@ -141,8 +140,6 @@ extern bool _BAM_HRESP_dump;
 	} while (0)
 #define SPS_DUMP(msg, args...) do {					\
 		SPS_IPC(4, sps, msg, args); \
-		if (_BAM_HRESP_dump) \
-			pr_err(msg, ##args);	\
 		if (sps) { \
 			if (sps->ipc_log4 == NULL) \
 				pr_info(msg, ##args);	\
@@ -158,8 +155,6 @@ extern bool _BAM_HRESP_dump;
 		SPS_IPC(3, dev, msg, args); \
 	} while (0)
 #define SPS_INFO(dev, msg, args...) do {				\
-		if (_BAM_HRESP_dump) \
-			pr_err(msg, ##args);	\
 		if (logging_option != 1) {	\
 			if (unlikely(print_limit_option > 1))	\
 				pr_info_ratelimited(msg, ##args);	\
@@ -169,8 +164,6 @@ extern bool _BAM_HRESP_dump;
 		SPS_IPC(3, dev, msg, args); \
 	} while (0)
 #define SPS_DBG(dev, msg, args...) do {					\
-		if (_BAM_HRESP_dump) \
-			pr_err(msg, ##args);	\
 		if ((unlikely(logging_option > 1))	\
 			&& (unlikely(debug_level_option > 3))) {\
 			if (unlikely(print_limit_option > 0))	\
@@ -185,8 +178,6 @@ extern bool _BAM_HRESP_dump;
 		}	\
 	} while (0)
 #define SPS_DBG1(dev, msg, args...) do {				\
-		if (_BAM_HRESP_dump) \
-			pr_err(msg, ##args);	\
 		if ((unlikely(logging_option > 1))	\
 			&& (unlikely(debug_level_option > 2))) {\
 			if (unlikely(print_limit_option > 0))	\
@@ -201,8 +192,6 @@ extern bool _BAM_HRESP_dump;
 		}	\
 	} while (0)
 #define SPS_DBG2(dev, msg, args...) do {				\
-		if (_BAM_HRESP_dump) \
-			pr_err(msg, ##args);	\
 		if ((unlikely(logging_option > 1))	\
 			&& (unlikely(debug_level_option > 1))) {\
 			if (unlikely(print_limit_option > 0))	\
@@ -217,8 +206,6 @@ extern bool _BAM_HRESP_dump;
 		}	\
 	} while (0)
 #define SPS_DBG3(dev, msg, args...) do {				\
-		if (_BAM_HRESP_dump) \
-			pr_err(msg, ##args);	\
 		if ((unlikely(logging_option > 1))	\
 			&& (unlikely(debug_level_option > 0))) {\
 			if (unlikely(print_limit_option > 0))	\

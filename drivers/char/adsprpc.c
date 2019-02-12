@@ -517,12 +517,6 @@ static int dma_alloc_memory(dma_addr_t *region_start, void **vaddr, size_t size,
 	if (IS_ERR_OR_NULL(*vaddr)) {
 		pr_err("adsprpc: %s: %s: dma_alloc_attrs failed for size 0x%zx, returned %pK\n",
 				current->comm, __func__, size, (*vaddr));
-
-/* HTC_AUD_START */
-#ifdef CONFIG_HTC_DEBUG_DSP
-		BUG();
-#endif
-/* HTC_AUD_END */
 		return -ENOMEM;
 	}
 	return 0;
@@ -1747,14 +1741,8 @@ static int fastrpc_internal_invoke(struct fastrpc_file *fl, uint32_t mode,
 	if (fl->profile && !interrupted) {
 		if (invoke->handle != FASTRPC_STATIC_HANDLE_LISTENER)
 			fl->perf.invoke += getnstimediff(&invoket);
-/* HTC_AUD_START Fix Klockwork */
-#if 0
 		if (!(invoke->handle >= 0 &&
 			invoke->handle <= FASTRPC_STATIC_HANDLE_MAX))
-#else
-		if (!(invoke->handle <= FASTRPC_STATIC_HANDLE_MAX))
-#endif
-/* HTC_AUD_END */
 			fl->perf.count++;
 	}
 	return err;
@@ -1819,12 +1807,6 @@ static int fastrpc_init_process(struct fastrpc_file *fl,
 				init->filelen))
 			goto bail;
 		if (init->filelen) {
-/* HTC_AUD_START Fix Klockwork */
-			if (init->filelen < 0) {
-				err = -EINVAL;
-				goto bail;
-			}
-/* HTC_AUD_END */
 			VERIFY(err, !fastrpc_mmap_create(fl, init->filefd, 0,
 				init->file, init->filelen, mflags, &file));
 			if (err)
@@ -1847,14 +1829,6 @@ static int fastrpc_init_process(struct fastrpc_file *fl,
 		dma_set_attr(DMA_ATTR_FORCE_NON_COHERENT, &imem_dma_attr);
 
 		err = fastrpc_buf_alloc(fl, memlen, imem_dma_attr, 0, 0, &imem);
-
-/* HTC_AUD_START Fix Klockwork */
-		if (init->memlen < 0) {
-			err = -EINVAL;
-			goto bail;
-		}
-
-/* HTC_AUD_END */
 		if (err)
 			goto bail;
 		fl->init_mem = imem;
@@ -1924,12 +1898,6 @@ static int fastrpc_init_process(struct fastrpc_file *fl,
 		inbuf.pageslen = 0;
 		if (!me->staticpd_flags) {
 			inbuf.pageslen = 1;
-/* HTC_AUD_START Fix Klockwork */
-			if (init->memlen < 0) {
-				err = -EINVAL;
-				goto bail;
-			}
-/* HTC_AUD_END */
 			VERIFY(err, !fastrpc_mmap_create(fl, -1, 0, init->mem,
 				 init->memlen, ADSP_MMAP_REMOTE_HEAP_ADDR,
 				 &mem));
@@ -3196,10 +3164,6 @@ static long fastrpc_device_ioctl(struct file *file, unsigned int ioctl_num,
 		if (!size)
 			size = sizeof(struct fastrpc_ioctl_init_attrs);
 		K_COPY_FROM_USER(err, 0, &p.init, param, size);
-		if (err)
-			goto bail;
-		VERIFY(err, p.init.init.filelen >= 0 &&
-			p.init.init.memlen >= 0);
 		if (err)
 			goto bail;
 		VERIFY(err, p.init.init.filelen >= 0 &&

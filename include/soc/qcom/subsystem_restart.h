@@ -127,10 +127,6 @@ struct notif_data {
 
 #if defined(CONFIG_MSM_SUBSYSTEM_RESTART)
 
-#if defined(CONFIG_HTC_DEBUG_SSR)
-void subsys_set_restart_reason(struct subsys_device *dev, const char *reason);
-#endif /* CONFIG_HTC_DEBUG_SSR  */
-
 #if defined(CONFIG_HTC_FEATURES_SSR)
 extern void subsys_set_enable_ramdump(struct subsys_device *dev, int enable);
 extern void subsys_set_restart_level(struct subsys_device *dev, int level);

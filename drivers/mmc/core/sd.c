@@ -271,8 +271,6 @@ static int mmc_read_ssr(struct mmc_card *card)
 				card->ssr.erase_timeout = (et * 1000) / es;
 				card->ssr.erase_offset = eo * 1000;
 			}
-			printk(KERN_INFO "%s: au : %d KB\n",
-				mmc_hostname(card->host), card->ssr.au);
 		} else {
 			pr_warn("%s: SD Status: Invalid Allocation Unit size\n",
 				mmc_hostname(card->host));
@@ -280,13 +278,9 @@ static int mmc_read_ssr(struct mmc_card *card)
 	}
 	spd_cls = UNSTUFF_BITS(ssr, 440 - 384, 8);
 	if (spd_cls < 5 && spd_cls > 0) {
-		printk(KERN_INFO "%s: speed class type is CLASS %d\n",
-			mmc_hostname(card->host), card_spd_val[spd_cls]);
 		card->speed_class = card_spd_val[spd_cls];
 	}
 	else {
-		printk(KERN_INFO "%s: Unknown speed class type\n",
-			mmc_hostname(card->host));
 		card->speed_class = -1;
 	}
 out:
@@ -1209,8 +1203,6 @@ static void mmc_sd_detect(struct mmc_host *host)
 		mmc_detach_bus(host);
 		mmc_power_off(host);
 		mmc_release_host(host);
-		printk(KERN_ERR "%s %s removed %d times\n",
-			__func__, mmc_hostname(host), host->removed_cnt);
 	}
 }
 

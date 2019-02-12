@@ -3521,7 +3521,6 @@ void mmc_blk_cmdq_complete_rq(struct request *rq)
 	struct mmc_queue *mq = (struct mmc_queue *)rq->q->queuedata;
 	int err = 0;
 	bool is_dcmd = false;
-	ktime_t now, diff;
 
 	if (mrq->cmd && mrq->cmd->error)
 		err = mrq->cmd->error;
@@ -3575,46 +3574,6 @@ void mmc_blk_cmdq_complete_rq(struct request *rq)
 		cmdq_req->skip_err_handling = false;
 		blk_end_request_all(rq, err);
 		goto out;
-	}
-
-	if (mrq->data) {
-		if (host->perf_enable) {
-			now = ktime_get();
-			// rw_start_time: would be the request start or previous rw_end_time.
-			diff = ktime_sub(now, (mrq->data->flags == MMC_DATA_READ) ?
-				host->perf.cmdq_read_start : host->perf.cmdq_write_start);
-
-			if (mrq->data->flags == MMC_DATA_READ) {
-				host->perf.rbytes_drv += mrq->data->bytes_xfered;
-				host->perf.rtime_drv = ktime_add(host->perf.rtime_drv, diff);
-				host->perf.rcount++;
-				host->perf.cmdq_read_map &=  ~(1 << cmdq_req->tag);
-				host->perf.cmdq_read_start = now;
-
-				if ((host->debug_mask & MMC_DEBUG_RANDOM_RW) &&
-						(mrq->data->bytes_xfered <= 32*1024)) {
-					host->perf.rbytes_drv_rand += mrq->data->bytes_xfered;
-					host->perf.rtime_drv_rand =
-							ktime_add(host->perf.rtime_drv_rand, diff);
-					host->perf.rcount_rand++;
-				}
-			} else {
-				host->perf.wbytes_drv += mrq->data->bytes_xfered;
-				host->perf.wkbytes_drv += (mrq->data->bytes_xfered / 1024);
-				host->perf.wtime_drv = ktime_add(host->perf.wtime_drv, diff);
-				host->perf.wcount++;
-				host->perf.cmdq_write_map &=  ~(1 << cmdq_req->tag);
-				host->perf.cmdq_write_start = now;
-
-				if ((host->debug_mask & MMC_DEBUG_RANDOM_RW) &&
-						(mrq->data->bytes_xfered <= 32*1024)) {
-					host->perf.wbytes_drv_rand += mrq->data->bytes_xfered;
-					host->perf.wtime_drv_rand =
-							ktime_add(host->perf.wtime_drv_rand, diff);
-					host->perf.wcount_rand++;
-				}
-			}
-		}
 	}
 
 	blk_end_request(rq, err, cmdq_req->data.bytes_xfered);
@@ -4350,10 +4309,7 @@ static void mmc_blk_remove_req(struct mmc_blk_data *md)
 						&dev_attr_cache_size);
 #endif
 
-                        if (mmc_card_sd(card))
-                                del_gendisk_no_sync(md->disk, true);
-                        else
-                                del_gendisk(md->disk);
+			del_gendisk(md->disk);
 		}
 		mmc_blk_put(md);
 	}

@@ -6677,7 +6677,7 @@ exit:
 				data->client.sb_virt, data->client.sb_length,
 				ION_IOC_INV_CACHES);
 	if (ret2) {
-		pr_err("cache operation failed %d\n", ret2);
+		pr_err("cache operation failed %d\n", ret);
 		return ret2;
 	}
 

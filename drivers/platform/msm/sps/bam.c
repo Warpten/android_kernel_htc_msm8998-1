@@ -693,8 +693,6 @@ static u32 bam_regmap[][BAM_MAX_REGS] = {
 	},
 };
 
-bool _BAM_HRESP_dump = false;
-
 /* AHB buffer error control */
 enum bam_nonsecure_reset {
 	BAM_NONSECURE_RESET_ENABLE  = 0,
@@ -1216,7 +1214,6 @@ u32 bam_check_irq_source(void *base, u32 ee, u32 mask,
 			SPS_ERR(dev, "sps:bam %pa 0x%pK(va);bam irq status="
 				"0x%x.\nsps: BAM_HRESP_ERR_IRQ\n",
 				BAM_ID(dev), dev->base, status);
-			_BAM_HRESP_dump = true;
 			bam_output_register_content(base, ee);
 			*cb_case = SPS_CALLBACK_BAM_HRESP_ERR_IRQ;
 #ifdef CONFIG_SPS_SUPPORT_NDP_BAM

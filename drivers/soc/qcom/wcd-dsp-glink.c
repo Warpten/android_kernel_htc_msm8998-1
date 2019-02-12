@@ -382,28 +382,15 @@ static void wdsp_glink_notify_state(void *handle, const void *priv,
 		 * Don't use dev_dbg here as dev may not be valid if channel
 		 * closed from driver close.
 		 */
-/* HTC_AUD_START */
-#if 0
-		pr_debug("%s: channel: %s disconnected locally\n",
+		pr_info("%s: channel: %s disconnected locally\n",
 			 __func__, ch->ch_cfg.name);
-#else
-		pr_err("%s: channel: %s disconnected locally\n",
-			 __func__, ch->ch_cfg.name);
-#endif
-/* HTC_AUD_END */
+		mutex_unlock(&ch->mutex);
 		ch->free_mem = true;
 		wake_up(&ch->ch_free_wait);
 		return;
 	} else if (event == GLINK_REMOTE_DISCONNECTED) {
-/* HTC_AUD_START */
-#if 0
-		dev_dbg(wpriv->dev, "%s: remote channel: %s disconnected remotely\n",
+		pr_info("%s: remote channel: %s disconnected remotely\n",
 			 __func__, ch->ch_cfg.name);
-#else
-		pr_err("%s: remote channel: %s disconnected remotely\n",
-			 __func__, ch->ch_cfg.name);
-#endif
-/* HTC_AUD_END */
 		/*
 		 * If remote disconnect happens, local side also has
 		 * to close the channel as per glink design in a
@@ -1095,9 +1082,6 @@ static int wdsp_glink_release(struct inode *inode, struct file *file)
 	if (wpriv->glink_state.handle)
 		glink_unregister_link_state_cb(wpriv->glink_state.handle);
 
-/* HTC_AUD_START */
-	pr_err("%s: ++\n", __func__);
-/* HTC_AUD_END */
 	flush_workqueue(wpriv->work_queue);
 	/*
 	 * Wait for channel local and remote disconnect state notifications
@@ -1137,9 +1121,6 @@ static int wdsp_glink_release(struct inode *inode, struct file *file)
 	kfree(wpriv->ch);
 	wpriv->ch = NULL;
 
-/* HTC_AUD_START */
-	pr_err("%s: --\n", __func__);
-/* HTC_AUD_END */
 	mutex_destroy(&wpriv->glink_mutex);
 	mutex_destroy(&wpriv->rsp_mutex);
 	kfree(wpriv);

@@ -1699,11 +1699,6 @@ static int adm_memory_map_regions(phys_addr_t *buf_add, uint32_t mempool_id,
 	if (!ret) {
 		pr_err("%s: timeout. waited for memory_map\n", __func__);
 		ret = -EINVAL;
-/* HTC_AUD_START */
-#ifdef CONFIG_HTC_DEBUG_DSP
-		BUG();
-#endif
-/* HTC_AUD_END */
 		goto fail_cmd;
 	} else if (atomic_read(&this_adm.adm_stat) > 0) {
 		pr_err("%s: DSP returned error[%s]\n",
@@ -1754,11 +1749,6 @@ static int adm_memory_unmap_regions(void)
 	if (!ret) {
 		pr_err("%s: timeout. waited for memory_unmap\n",
 		       __func__);
-/* HTC_AUD_START */
-#ifdef CONFIG_HTC_DEBUG_DSP
-		BUG();
-#endif
-/* HTC_AUD_END */
 		ret = -EINVAL;
 		goto fail_cmd;
 	} else if (atomic_read(&this_adm.adm_stat) > 0) {
@@ -2389,11 +2379,9 @@ int adm_open(int port_id, int path, int rate, int channel_mode, int topology,
 	int copp_idx = -1;
 	int tmp_port = q6audio_get_port_id(port_id);
 
-/* HTC_AUD_START - Add log */
-	pr_info("%s:port %#x path:%d rate:%d mode:%d perf_mode:%d,topo_id %d\n",
+	pr_debug("%s:port %#x path:%d rate:%d mode:%d perf_mode:%d,topo_id %d\n",
 		 __func__, port_id, path, rate, channel_mode, perf_mode,
 		 topology);
-/* HTC_AUD_END */
 
 	port_id = q6audio_convert_virtual_to_portid(port_id);
 	port_idx = adm_validate_and_get_port_index(port_id);
@@ -2605,11 +2593,6 @@ int adm_open(int port_id, int path, int rate, int channel_mode, int topology,
 		if (!ret) {
 			pr_err("%s: ADM open timedout for port_id: 0x%x for [0x%x]\n",
 						__func__, tmp_port, port_id);
-/* HTC_AUD_START */
-#ifdef CONFIG_HTC_DEBUG_DSP
-			BUG();
-#endif
-/* HTC_AUD_END */
 			return -EINVAL;
 		} else if (atomic_read(&this_adm.copp.stat
 					[port_idx][copp_idx]) > 0) {
@@ -3135,10 +3118,8 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 	int ret = 0, port_idx;
 	int copp_id = RESET_COPP_ID;
 
-/* HTC_AUD_START - Add log */
-	pr_info("%s: port_id=0x%x perf_mode: %d copp_idx: %d\n", __func__,
+	pr_debug("%s: port_id=0x%x perf_mode: %d copp_idx: %d\n", __func__,
 		 port_id, perf_mode, copp_idx);
-/* HTC_AUD_END */
 
 	port_id = q6audio_convert_virtual_to_portid(port_id);
 	port_idx = adm_validate_and_get_port_index(port_id);
@@ -3246,11 +3227,6 @@ int adm_close(int port_id, int perf_mode, int copp_idx)
 		if (!ret) {
 			pr_err("%s: ADM cmd Route timedout for port 0x%x\n",
 				__func__, port_id);
-/* HTC_AUD_START */
-#ifdef CONFIG_HTC_DEBUG_DSP
-			BUG();
-#endif
-/* HTC_AUD_END */
 			return -EINVAL;
 		} else if (atomic_read(&this_adm.copp.stat
 					[port_idx][copp_idx]) > 0) {

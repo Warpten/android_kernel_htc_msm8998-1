@@ -473,3 +473,18 @@ int squashfs_read_data_async(struct super_block *sb, u64 index, int length,
 	return __squashfs_read_data(sb, index, length, next_index, output,
 				    false);
 }
+
+int squashfs_read_data(struct super_block *sb, u64 index, int length,
+	u64 *next_index, struct squashfs_page_actor *output)
+{
+	return __squashfs_read_data(sb, index, length, next_index, output,
+				    true);
+}
+
+int squashfs_read_data_async(struct super_block *sb, u64 index, int length,
+	u64 *next_index, struct squashfs_page_actor *output)
+{
+
+	return __squashfs_read_data(sb, index, length, next_index, output,
+				    false);
+}

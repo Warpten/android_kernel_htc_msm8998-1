@@ -175,6 +175,10 @@ void __set_page_owner_migrate_reason(struct page *page, int reason)
 {
 	struct page_ext *page_ext = lookup_page_ext(page);
 	if (unlikely(!page_ext))
+		/*
+		 * The caller just returns 0 if no valid gfp
+		 * So return 0 here too.
+		 */
 		return;
 
 	page_ext->last_migrate_reason = reason;

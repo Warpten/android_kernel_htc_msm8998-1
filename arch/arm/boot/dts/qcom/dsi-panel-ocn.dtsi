@@ -222,6 +222,8 @@
 		qcom,mdss-dsi-panel-max-error-count = <3>;
 		qcom,mdss-dsi-panel-status-value = <0x1e 0x1e 0x1e 0x1e>;
 		qcom,dcs-cmd-by-left;
+        qcom,ulps-enabled;
+		qcom,panel-allow-phy-poweroff;
 		qcom,mdss-dsi-on-command = [
 05 01 00 00 0A 00 02 01 00 /* soft reset */
 15 01 00 00 00 00 02 35 00 /* TE on */
